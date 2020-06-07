@@ -96,10 +96,11 @@ class Guide(object):
 
 
 class EdgeFollower(object):
-    def __init__(self, dic=None, guide=None, payload_separator=b'\x01'):
+    def __init__(self, dic=None, guide=None, payload_separator=b'\x01', levels_to_descend=None):
         self._payload_separator = ord(payload_separator)
         self._dic = dic
         self._guide = guide
+        self.levels_to_descend = levels_to_descend
 
     def value(self):
         "provides list of values at current index"
@@ -136,7 +137,7 @@ class EdgeFollower(object):
                         return self.next()
                     else:
                         return self._get_next_multibyte(
-                            child_label, child_index, None, bytearray())
+                            child_label, child_index, levels_to_descend, bytearray())
         return False
 
     def _get_next_multibyte(self, child_label, index, lvls=None,
@@ -155,7 +156,7 @@ class EdgeFollower(object):
                     (index, i, prev_index, part_key[:]))
                 part_key.append(next_child_label)
         self.key.extend(part_key)
-        self.decoded_key = self.key.decode('utf8')
+        self.decoded_key = self.key
         self._cur_index = index
         return True
 
