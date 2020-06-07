@@ -113,7 +113,88 @@ class DAWG(object):
 
         return res
 
+class INT32DAWG(DAWG):
+    """
+    DAWG with key completion support.
+    """
 
+    def __init__(self):
+        super(CompletionDAWG, self).__init__()
+        self.guide = None
+
+    def keys(self, prefix=""):
+        b_prefix = prefix.astype(np.uint32).tostring()
+        res = []
+
+        index = self.dct.follow_bytes(b_prefix, self.dct.ROOT)
+        if index is None:
+            return res
+
+        completer = wrapper.Completer(self.dct, self.guide)
+        completer.start(index, b_prefix)
+
+        while completer.next():
+            key = np.frombuffer(completer.key, dtype=np.uint32)
+            res.append(key)
+
+        return res
+
+    def children(self, prefix=""):
+        b_prefix = prefix.astype(np.uint32).tostring()
+        res = []
+
+        index = self.dct.follow_bytes(b_prefix, self.dct.ROOT)
+        if index is None:
+            return res
+
+        edge_follower = wrapper.EdgeFollower(self.dct, self.guide)
+        if not edge_follower.start(index, b_prefix):
+            return res
+
+        res.append(edge_follower.get_cur_child())
+        while edge_follower.next():
+            res.append(np.frombuffer(edge_follower.get_cur_child(), dtype=np.uint32))
+        return res
+
+    def iterchildren(self, prefix=""):
+        b_prefix = prefix.astype(np.uint32).tostring()
+
+        index = self.dct.follow_bytes(b_prefix, self.dct.ROOT)
+        if index is None:
+            return
+
+        edge_follower = wrapper.EdgeFollower(self.dct, self.guide)
+        if not edge_follower.start(index, b_prefix):
+            return
+
+        yield edge_follower.get_cur_child()
+        while edge_follower.next():
+            yield edge_follower.get_cur_child()
+
+    def iterkeys(self, prefix=""):
+        b_prefix = prefix.encode('utf8')
+        index = self.dct.follow_bytes(b_prefix, self.dct.ROOT)
+        if index is None:
+            return
+
+        completer = wrapper.Completer(self.dct, self.guide)
+        completer.start(index, b_prefix)
+
+        while completer.next():
+            yield np.frombuffer(completer.key, dtype=np.uint32)
+
+
+    def load(self, path):
+        """
+        Loads DAWG from a file.
+        """
+        self.dct = wrapper.Dictionary()
+        self.guide = wrapper.Guide()
+
+        with open(path, 'rb') as f:
+            self.dct.read(f)
+            self.guide.read(f)
+        return self
 
 class CompletionDAWG(DAWG):
     """
