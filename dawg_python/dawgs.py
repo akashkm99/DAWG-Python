@@ -147,7 +147,7 @@ class INT32DAWG(DAWG):
         if index is None:
             return res
 
-        edge_follower = wrapper.EdgeFollower(self.dct, self.guide)
+        edge_follower = wrapper.EdgeFollower(self.dct, self.guide, levels_to_descend=3)
         if not edge_follower.start(index, b_prefix):
             return res
 
@@ -163,13 +163,13 @@ class INT32DAWG(DAWG):
         if index is None:
             return
 
-        edge_follower = wrapper.EdgeFollower(self.dct, self.guide)
+        edge_follower = wrapper.EdgeFollower(self.dct, self.guide, levels_to_descend=3)
         if not edge_follower.start(index, b_prefix):
             return
 
         yield edge_follower.get_cur_child()
         while edge_follower.next():
-            yield edge_follower.get_cur_child()
+            yield np.frombuffer(edge_follower.get_cur_child(), dtype=np.uint32)
 
     def iterkeys(self, prefix=""):
         b_prefix = prefix.encode('utf8')
