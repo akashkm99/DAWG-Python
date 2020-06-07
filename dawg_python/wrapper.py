@@ -96,12 +96,11 @@ class Guide(object):
 
 
 class EdgeFollower(object):
-    def __init__(self, dic=None, guide=None, payload_separator=b'\x01', levels_to_descend=None):
+    def __init__(self, dic=None, guide=None, payload_separator=b'\x01'):
         self._payload_separator = ord(payload_separator)
         self._dic = dic
         self._guide = guide
-        self.levels_to_descend = levels_to_descend
-
+        
     def value(self):
         "provides list of values at current index"
 
@@ -124,7 +123,9 @@ class EdgeFollower(object):
         self.base_key_len = len(self.key)
         self._parent_index = index
         self._sib_index_stack = []
+        
         if self._guide.size():
+            
             child_label = self._guide.child(index)
             if child_label:
                 # Follows a transition to the first child.
@@ -137,7 +138,7 @@ class EdgeFollower(object):
                         return self.next()
                     else:
                         return self._get_next_multibyte(
-                            child_label, child_index, levels_to_descend, bytearray())
+                            child_label, child_index, None, bytearray())
         return False
 
     def _get_next_multibyte(self, child_label, index, lvls=None,
@@ -146,7 +147,15 @@ class EdgeFollower(object):
         to get the first decodable chr"""
         part_key.append(child_label)
         if lvls is None:
-            lvls = levels_to_descend(child_label)
+            #lvls = levels_to_descend(child_label)
+            levls=0
+            temp_child_label=child_label
+            temp_idx=index
+            while (temp_child_label!=' ' or temp_child_label!='\0'):
+                temp_child_label = self._guide.child(temp_idx)
+                temp_idx = self._dic.follow_char(temp_child_label, temp_idx)
+                levls+=1
+            
         if lvls > 0:
             for i in reversed(range(lvls)):
                 next_child_label = self._guide.child(index)
